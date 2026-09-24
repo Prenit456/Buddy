@@ -14,7 +14,13 @@ const privatePath = /(^|\/)(\.env(?!\.example$)|HubSecrets\.h$|\.pio\/|\.vercel\
 const unsafe = tracked.filter(path => privatePath.test(path));
 let keyFiles = [];
 try {
-  keyFiles = execFileSync('git', ['grep', '--cached', '-l', '-i', '-E', 'sk-or-v1-|nvapi-|sk_[a-z0-9]{16,}'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').filter(Boolean);
+  // Assemble marker text so this checker does not match its own source.
+  const keyPattern = [
+    ['sk', 'or', 'v1', ''].join('-'),
+    ['nv', 'api'].join('') + '-',
+    'sk_' + '[a-z0-9]{16,}'
+  ].join('|');
+  keyFiles = execFileSync('git', ['grep', '--cached', '-l', '-i', '-E', keyPattern], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').filter(Boolean);
 } catch (error) {
   if (error.status !== 1) throw error;
 }
