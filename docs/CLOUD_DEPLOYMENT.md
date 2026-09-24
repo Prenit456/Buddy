@@ -1,7 +1,7 @@
 # Buddy free-tier cloud prototype
 
 The existing Buddy website runs on Vercel; the Node backend runs on Render
-Free; Supabase stores accounts, settings, pairing data and ElevenLabs key-order
+Free; Supabase stores accounts, settings, pairing data and provider key-order
 fingerprints. The ESP32 contacts Render directly. The Mac can be off after the
 initial firmware upload, but the free services are **not dependable care
 infrastructure**. Render can sleep after inactivity and takes time to wake;
@@ -42,8 +42,16 @@ Set these values in Render's private environment-variable prompts:
 - `SUPABASE_SECRET_KEY`: the `sb_secret_` server key.
 - `ELEVENLABS_API_KEY`: a newly rotated key with speech-to-text and TTS
   permission. Optional `ELEVENLABS_API_KEYS` supplies backups.
-- `OPENROUTER_API_KEYS` and optional `GEMINI_API_KEY`: newly rotated provider
-  keys if you want the AI and voice fallbacks.
+- `NVIDIA_CHAT_API_KEYS`: one or more newly rotated NVIDIA API Catalog keys,
+  separated by commas (or new lines), for the AI chatbot. The default chat
+  model is `meta/muse-glimmer-30b`; optional
+  `NVIDIA_CHAT_MODEL` overrides it. This does not replace speech keys.
+- `GEMINI_API_KEY`: optional Google speech fallback after ElevenLabs TTS fails.
+
+If this Blueprint was already deployed with `OPENROUTER_API_KEYS`, add
+`NVIDIA_CHAT_API_KEYS` manually under **buddy-care → Environment**, remove the
+old OpenRouter variable, and select **Save and deploy**. Blueprint `sync: false`
+values are prompted only at initial creation, not again on later syncs.
 
 The Blueprint already sets `BUDDY_STORAGE=supabase` and `BUDDY_HOST=0.0.0.0`.
 In cloud mode, storage is required: if the Supabase table, URL or secret key

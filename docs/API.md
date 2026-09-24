@@ -30,7 +30,7 @@ See `care-hub/hub_tests.mjs` for executable request examples and permission chec
 | POST | /api/transcribe | Companion only: short WAV to ElevenLabs STT |
 | POST | /api/tts | Companion only: text to speech |
 | GET | /api/tts/voices | Companion voice profiles |
-| POST | /api/assistant | Companion only: OpenRouter conversation with key fallback |
+| POST | /api/assistant | Companion only: NVIDIA conversation with key fallback |
 | POST | /api/prescription/scan | Companion: JPEG/PNG or text → unconfirmed draft |
 | POST | /api/prescription/review | Validate reviewed items; return reminders without saving |
 

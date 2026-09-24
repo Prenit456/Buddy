@@ -70,21 +70,21 @@ BUDDY_HOST=0.0.0.0 npm start
 Keep this process running on the same trusted Wi-Fi network as Buddy. Open
 http://localhost:4173 on this computer for the existing app. Provider keys are
 already configured in `.env.local`: ElevenLabs transcription and primary TTS,
-Google Gemini TTS fallback, and OpenRouter conversation. No provider key is compiled into the
+Google Gemini TTS fallback, and NVIDIA conversation. No provider key is compiled into the
 ESP32; the Care Hub reads them from its local `.env.local` file.
 The Care Hub supports only physical ESP32 devices. The old demo setting is
 ignored. In the signed-in site, **My Buddy** must show a `Paired ESP32`, its latest contact, and
 a device revision matching the saved revision before a website change is
 considered applied to hardware.
 
-**Service status (September 23):** live ElevenLabs TTS/STT, OpenRouter conversation,
-and Google fallback-after-ElevenLabs-failure checks passed. The three extra
-ElevenLabs keys are configured but returned `missing_permissions` for TTS; enable
-Text to Speech in the ElevenLabs key settings before relying on them. The original NVIDIA conversation requests timed out,
-so the hub now uses OpenRouter's `openrouter/free` route with a tested primary and
-backup key. Built-in commands such as time, reminders and SOS do not use the
-conversation model, but spoken input still requires working transcription. See
-`VERIFICATION.md` for exact test results.
+**Service status:** the September 23 live checks passed for ElevenLabs TTS/STT,
+Google TTS fallback and the former OpenRouter conversation path. The three
+extra ElevenLabs keys returned `missing_permissions` for TTS; enable Text to
+Speech in their settings before relying on them. On September 24, the NVIDIA
+chat path answered through an isolated authenticated device route; it still
+needs a real physical-device check with replacement NVIDIA keys. Built-in commands such as time, reminders
+and SOS do not use the conversation model, but spoken input still requires
+working transcription. See `VERIFICATION.md` for exact test results.
 
 For the ESP32, use the computer's actual Wi-Fi IPv4 address followed by `:4173`.
 Find it in macOS **System Settings → Wi-Fi → Details → TCP/IP**. A URL such as

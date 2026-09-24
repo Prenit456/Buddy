@@ -111,7 +111,7 @@ try {
     assert.match(result.text,/hey buddy/i);
     return {recognizedWakePhrase:true};
   });
-  await check('OpenRouter conversation through authenticated device API',async()=>{
+  await check('NVIDIA conversation through authenticated device API',async()=>{
     const result=await json(await post('/device/assistant',{message:'Say hello in one short sentence.'},device.deviceToken));
     assert.ok(typeof result.answer==='string'&&result.answer.trim().length);
     return {receivedAnswer:true};

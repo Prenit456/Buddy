@@ -72,14 +72,11 @@ Examples:
 - “Hey Buddy, answer call.” / “Hey Buddy, decline call.”
 - “Hey Buddy, allow camera.” / “Hey Buddy, stop camera.”
 
-The device's typed input exercises the same C++ parser. The website's **Talk with Buddy** screen and general device conversation use OpenRouter through the Care Hub; reminders and built-in commands do not require a conversation model. The current configuration selects [OpenRouter's free model route](https://openrouter.ai/openrouter/free), which has rate limits and can route to different models. Two verified keys are kept in order for retry. The speech provider and conversation provider are separate. Website chat history stays in the current browser tab and is not saved to the care journal.
+The device's typed input exercises the same C++ parser. The website's **Talk with Buddy** screen and general device conversation use NVIDIA's API Catalog through the Care Hub; reminders and built-in commands do not require a conversation model. Set `NVIDIA_CHAT_API_KEYS` on the server to one or more comma-separated keys. The server tries the next key if a request fails or returns no answer, and moves rejected or rate-limited keys to the end for later requests. The default model is `meta/muse-glimmer-30b`; it can be changed with `NVIDIA_CHAT_MODEL`. NVIDIA chat and the ElevenLabs/Google speech providers remain separate. Website chat history stays in the current browser tab and is not saved to the care journal.
 
-September 23 live checks: Gemini speech and ElevenLabs speech/transcription passed.
-The prior NVIDIA conversation endpoint timed out. An authenticated Care Hub
-conversation request now succeeds through OpenRouter using synthetic test data.
-See [verification results](docs/VERIFICATION.md).
+September 23 live checks verified Gemini speech, ElevenLabs speech/transcription, and the former OpenRouter chat route. September 24 checks received a short answer both directly from NVIDIA-hosted Muse Glimmer and through Buddy's authenticated, isolated device endpoint. A real website/physical-device round trip with replacement NVIDIA keys is still needed after deployment. See [verification results](docs/VERIFICATION.md).
 
-Keep keys only in the ignored .env.local file; see .env.example. Rotate any keys pasted into chat before deploying. No provider key belongs in the browser or ESP32 firmware.
+Keep keys only in Render's private environment or the ignored `.env.local` file for local runs; see `.env.example`. Rotate any keys pasted into chat before deploying. No provider key belongs in the browser or ESP32 firmware.
 
 ## Prescription safety
 

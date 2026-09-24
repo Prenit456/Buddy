@@ -17,7 +17,7 @@
 - Native audio tests cover signed microphone conversion, speaker volume/stereo slots, fragmented WAV reads, metadata chunks and rejection of unsupported/malformed audio.
 - Latest `npm test` passed; all 17 isolated HTTP/care-circle integration tests passed after the firmware handoff changes.
 - Final website pass: the typed **Talk with Buddy** screen rendered in a browser with fictional accounts. Hardware calling still requires physical end-to-end verification on the ESP32.
-- Final provider round trip: ElevenLabs primary TTS, ElevenLabs speech-to-text, OpenRouter conversation, and Google TTS after deliberately invalid ElevenLabs keys all passed through authenticated device routes. The complete `buddy-s3-camera` PlatformIO build and all 17 isolated integration tests passed. This does not replace a physical video-call quality test.
+- September 23 provider round trip: ElevenLabs primary TTS, ElevenLabs speech-to-text, the former OpenRouter conversation route, and Google TTS after deliberately invalid ElevenLabs keys all passed through authenticated device routes. The complete `buddy-s3-camera` PlatformIO build and all 17 isolated integration tests passed. This does not replace a physical video-call quality test.
 
 ## Live provider checks — September 23, 2026
 
@@ -37,15 +37,27 @@ data:
 | OpenRouter HELLO key | Returned HTTP 401; not configured |
 | Authenticated Buddy device conversation | **Passed** using isolated test accounts and a synthetic prompt after the OpenRouter switch |
 
-The previous NVIDIA model-list endpoint returned HTTP 200 and included the
-configured `openai/gpt-oss-20b` model, but generation did not complete. The Care
-Hub now uses OpenRouter for conversation; its local `.env.local` contains the two
-keys that produced replies, in primary/backup order, and no NVIDIA conversation
-key. Both keys report free-tier access and belong to different OpenRouter accounts.
-Requests use the free model route. The free router may pick different models
-or hit rate limits, so one successful synthetic exchange does not prove sustained
-availability or spoken conversation on the physical assembly. Local reminder and
-time commands do not depend on OpenRouter.
+At the time, the previous NVIDIA model-list endpoint returned HTTP 200 and
+included `openai/gpt-oss-20b`, but generation did not complete. The Care Hub
+therefore used OpenRouter for this September 23 test. Those historic results do
+not validate the current NVIDIA implementation or sustained provider availability.
+Local reminder and time commands do not depend on a conversation provider.
+
+## NVIDIA chatbot switch — September 24, 2026
+
+The server chat route now uses NVIDIA's API Catalog with a configurable model
+and multiple private keys. Local automated tests cover key parsing, fallback
+after rate limits and empty replies, credential-free errors, malformed history,
+retired-model handling and queued-response polling. The provider's read-only
+Cloud Functions discovery endpoint accepted the NVIDIA key shared in this task.
+Old models were retired, Nemotron 3 Super reported overload, and Nemotron 3.5
+Lightning timed out after 35 seconds. A direct request to the newly selected
+`meta/muse-glimmer-30b` returned HTTP 200 with the answer `OK` in about 1.3
+seconds. The exact new provider function also returned a short answer, and
+Buddy's authenticated device-assistant route passed once using isolated
+fictional accounts and a synthetic prompt. The shared key needs rotation
+before deployment; verify a signed-in website and physical-device round trip
+with replacement keys after the Render redeploy.
 
 No real prescription was imported and test settings were isolated from the saved care configuration.
 

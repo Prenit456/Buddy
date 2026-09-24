@@ -37,7 +37,7 @@ App-to-app video uses [WebRTC signaling](https://developer.mozilla.org/en-US/doc
 
 Buddy-to-app media uses authenticated HTTP exchanges of 320×240 JPEG frames and 16 kHz mono signed little-endian PCM. It is a lightweight low-frame-rate prototype, **not a full ESP32 WebRTC stack or a verified high-quality intercom**. The hub relays it in memory, so it is not end-to-end encrypted beyond transport TLS. No frames/audio are written to disk; call metadata is retained. [Espressif's camera driver](https://github.com/espressif/esp32-camera) supplies capture; [TJpg_Decoder](https://github.com/Bodmer/TJpg_Decoder) decodes the return video on the TFT.
 
-Wake speech and general conversation are separate: short utterances go to ElevenLabs for transcription before the C++ wake-phrase check; general questions go to OpenRouter's configured free model route. The hub retries a second verified OpenRouter key when the first request fails or returns no text. Live call audio does **not** go through either provider. This project does not promise offline/custom local keyword spotting.
+Wake speech and general conversation are separate: short utterances go to ElevenLabs for transcription before the C++ wake-phrase check; general questions go to NVIDIA's configured chat model. The hub tries the next configured NVIDIA key when a request fails or returns no text. Live call audio does **not** go through either provider. This project does not promise offline/custom local keyword spotting.
 
 ## What is implemented versus still required
 

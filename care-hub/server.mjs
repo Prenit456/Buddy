@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { prescriptionDraft, reviewedReminders } from './care.mjs';
 import { CareHub } from './care-hub.mjs';
 import { SupabaseState } from './supabase-state.mjs';
-import { openRouterKeys, openRouterConversation } from './conversation-provider.mjs';
+import {nvidiaChatKeys, nvidiaConversation, DEFAULT_NVIDIA_CHAT_MODEL} from './conversation-provider.mjs';
 import {configuredElevenLabsKeys, ElevenLabsKeyRing, isElevenLabsLimitError} from './elevenlabs-keys.mjs';
 import { createServer as createSecureServer } from 'node:https';
 
@@ -22,6 +22,7 @@ const execFileAsync = promisify(execFile);
 let settings;
 let careHub;
 let elevenLabsKeys;
+let nvidiaKeys;
 
 
 async function loadLocalEnv() {
@@ -74,8 +75,10 @@ async function bodyJson(req) {
 }
 
 function callConversation(message, history = [], careSettings = settings) {
-  return openRouterConversation({message, history, careSettings,
-    keys: process.env.OPENROUTER_API_KEYS, model: process.env.OPENROUTER_MODEL || 'openrouter/free'});
+  return nvidiaConversation({message, history, careSettings,
+    keys:nvidiaKeys.orderedKeys(),
+    model:process.env.NVIDIA_CHAT_MODEL || DEFAULT_NVIDIA_CHAT_MODEL,
+    onKeyRejected:key => nvidiaKeys.moveToLast(key)});
 }
 
 const voiceProfiles = {
@@ -295,6 +298,10 @@ elevenLabsKeys = await new ElevenLabsKeyRing(
   configuredElevenLabsKeys(process.env.ELEVENLABS_API_KEY, process.env.ELEVENLABS_API_KEYS),
   join(stateDirectory, 'elevenlabs-key-order.json'),
   cloudState?.forKey('elevenlabs-key-order')).load();
+nvidiaKeys = await new ElevenLabsKeyRing(
+  nvidiaChatKeys(process.env.NVIDIA_CHAT_API_KEYS),
+  join(stateDirectory, 'nvidia-chat-key-order.json'),
+  cloudState?.forKey('nvidia-chat-key-order')).load();
 await loadSettings();
 careHub=await new CareHub({directory:stateDirectory,defaults:settings,services:{assistant:callConversation,publicDeviceUrl:publicDeviceUrl()},stateStore:cloudState?.forKey('care-hub')}).init();
 
@@ -315,7 +322,7 @@ server.listen(port, process.env.BUDDY_HOST || "127.0.0.1", () => {
   console.log(`Buddy storage:    ${storageMode}`);
   console.log(`ElevenLabs TTS:    ${elevenLabsKeys.size ? `configured (primary, ${elevenLabsKeys.size} keys)` : 'disabled (set ELEVENLABS_API_KEY)'}`);
   console.log(`Gemini TTS:        ${process.env.GEMINI_API_KEY ? "configured (fallback)" : "disabled (set GEMINI_API_KEY)"}`);
-  console.log(`OpenRouter assistant: ${openRouterKeys(process.env.OPENROUTER_API_KEYS).length ? `configured (${process.env.OPENROUTER_MODEL || 'openrouter/free'})` : "disabled (set OPENROUTER_API_KEYS)"}`);
+  console.log(`NVIDIA assistant: ${nvidiaKeys.size ? `configured (${process.env.NVIDIA_CHAT_MODEL || DEFAULT_NVIDIA_CHAT_MODEL}, ${nvidiaKeys.size} keys)` : 'disabled (set NVIDIA_CHAT_API_KEYS)'}`);
 });
 
 function shutdown() { careHub.close();server.close(() => process.exit(0));setTimeout(() => process.exit(0), 500).unref(); }
