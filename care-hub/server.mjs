@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { prescriptionDraft, reviewedReminders } from './care.mjs';
 import { CareHub } from './care-hub.mjs';
+import { SupabaseState } from './supabase-state.mjs';
 import { openRouterKeys, openRouterConversation } from './conversation-provider.mjs';
 import {configuredElevenLabsKeys, ElevenLabsKeyRing, isElevenLabsLimitError} from './elevenlabs-keys.mjs';
 import { createServer as createSecureServer } from 'node:https';
@@ -275,6 +276,12 @@ async function staticFile(req, res, url) {
 }
 
 await loadLocalEnv();
+const storageMode = process.env.BUDDY_STORAGE || 'local';
+if(!['local','supabase'].includes(storageMode))throw new Error('BUDDY_STORAGE must be local or supabase.');
+const cloudState = storageMode === 'supabase' ? new SupabaseState({
+  url:process.env.SUPABASE_URL,
+  secretKey:process.env.SUPABASE_SECRET_KEY
+}) : null;
 function publicDeviceUrl() {
   const value = process.env.BUDDY_PUBLIC_URL || process.env.RENDER_EXTERNAL_URL;
   if (!value) return null;
@@ -286,9 +293,10 @@ function publicDeviceUrl() {
 }
 elevenLabsKeys = await new ElevenLabsKeyRing(
   configuredElevenLabsKeys(process.env.ELEVENLABS_API_KEY, process.env.ELEVENLABS_API_KEYS),
-  join(stateDirectory, 'elevenlabs-key-order.json')).load();
+  join(stateDirectory, 'elevenlabs-key-order.json'),
+  cloudState?.forKey('elevenlabs-key-order')).load();
 await loadSettings();
-careHub=await new CareHub({directory:stateDirectory,defaults:settings,services:{assistant:callConversation,publicDeviceUrl:publicDeviceUrl()}}).init();
+careHub=await new CareHub({directory:stateDirectory,defaults:settings,services:{assistant:callConversation,publicDeviceUrl:publicDeviceUrl()},stateStore:cloudState?.forKey('care-hub')}).init();
 
 const handler = async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || `localhost:${port}`}`);
@@ -304,6 +312,7 @@ const server=process.env.BUDDY_TLS_CERT&&process.env.BUDDY_TLS_KEY?createSecureS
 
 server.listen(port, process.env.BUDDY_HOST || "127.0.0.1", () => {
   console.log(`Buddy Care:       http://localhost:${server.address().port}/`);
+  console.log(`Buddy storage:    ${storageMode}`);
   console.log(`ElevenLabs TTS:    ${elevenLabsKeys.size ? `configured (primary, ${elevenLabsKeys.size} keys)` : 'disabled (set ELEVENLABS_API_KEY)'}`);
   console.log(`Gemini TTS:        ${process.env.GEMINI_API_KEY ? "configured (fallback)" : "disabled (set GEMINI_API_KEY)"}`);
   console.log(`OpenRouter assistant: ${openRouterKeys(process.env.OPENROUTER_API_KEYS).length ? `configured (${process.env.OPENROUTER_MODEL || 'openrouter/free'})` : "disabled (set OPENROUTER_API_KEYS)"}`);

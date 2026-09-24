@@ -7,7 +7,7 @@
     "start": "node care-hub/server.mjs",
     "build:vercel": "node scripts/build-vercel.mjs",
     "check:repo": "node scripts/check-repo-safety.mjs",
-    "test": "node --test care-hub/care_tests.mjs care-hub/conversation_tests.mjs care-hub/elevenlabs_keys_tests.mjs && node --check companion-app/app.js && node --check companion-app/care-ui.js && node --check companion-app/portal.js && node --check companion-app/calls.js && node --check companion-app/session.js && node --check care-hub/server.mjs && node --check care-hub/conversation-provider.mjs && node --check care-hub/elevenlabs-keys.mjs && node --check care-hub/care-hub.mjs",
+    "test": "node --test care-hub/care_tests.mjs care-hub/conversation_tests.mjs care-hub/elevenlabs_keys_tests.mjs care-hub/supabase-state_tests.mjs && node --check companion-app/app.js && node --check companion-app/care-ui.js && node --check companion-app/portal.js && node --check companion-app/calls.js && node --check companion-app/session.js && node --check care-hub/server.mjs && node --check care-hub/conversation-provider.mjs && node --check care-hub/elevenlabs-keys.mjs && node --check care-hub/care-hub.mjs",
     "test:integration": "node --test care-hub/hub_tests.mjs",
     "test:hub": "node --test care-hub/hub_tests.mjs",
     "test:conversation": "node scripts/check_providers.mjs --conversation-only",

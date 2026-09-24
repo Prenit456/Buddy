@@ -1,84 +1,95 @@
-# Use Buddy away from home
+# Buddy free-tier cloud prototype
 
-Buddy and the website can connect from different cities without a Mac running.
-They still need one internet-reachable service to hold accounts, settings and
-pairing state and to relay calls. The existing `care-hub/server.mjs` is that
-service; `render.yaml` is an optional deployment recipe, not a replacement app.
-Wi-Fi alone cannot deliver remote changes to an ESP32 behind a home router.
-If you want the website on Vercel, use the same backend described here and
-follow the separate [Vercel website guide](VERCEL_DEPLOYMENT.md).
+The existing Buddy website runs on Vercel; the Node backend runs on Render
+Free; Supabase stores accounts, settings, pairing data and ElevenLabs key-order
+fingerprints. The ESP32 contacts Render directly. The Mac can be off after the
+initial firmware upload, but the free services are **not dependable care
+infrastructure**. Render can sleep after inactivity and takes time to wake;
+Supabase can pause low-activity projects. Keep an independent emergency and
+medication plan.
 
-## Recommended prototype host: Render
+## 1. Prepare Supabase
 
-Use a **paid web service with a persistent disk**. The included Blueprint uses
-the 0.5 CPU / 512 MB plan and a 1 GB disk mounted at `/var/data`; the server
-reads/writes state there. Review Render's current pricing before creating it.
-The free service sleeps and cannot attach the disk, so it is unsuitable for
-continuous Buddy sync or durable care-circle data.
+Create a Supabase Free project. In its **SQL Editor**, run the complete
+[`SUPABASE_SETUP.sql`](SUPABASE_SETUP.sql) once. The table has row-level security
+enabled, no browser-user access policy, and no `anon` or `authenticated` grant.
+The Buddy backend continues to manage its own user accounts; Supabase Auth is
+not used by this prototype.
 
-1. Put this project in a **private** source repository. Check that `.env.local`,
-   `care-hub/state`, and `firmware/include/HubSecrets.h` are not included.
-   The current local account data is **not** automatically transferred. Ask for
-   a secure migration if you need to keep it; never commit the state file.
-2. In Render, create a Blueprint from the private repository's `render.yaml`.
-   This creates a **billable** web service and disk. Do not proceed unless you
-   agree to Render's charges and have reviewed the prototype limitations below.
-3. Enter newly rotated provider keys as Render secret environment variables.
-   The Blueprint asks for `ELEVENLABS_API_KEY`, optional
-   `ELEVENLABS_API_KEYS`, `GEMINI_API_KEY`, and `OPENROUTER_API_KEYS`.
-   Never paste keys into the website or ESP32, and rotate the keys previously
-   shared in chat before public deployment.
-4. Wait for the site to open at a stable `https://...onrender.com` address.
-   Register or sign in there; the localhost site and cloud site have separate
-   account databases unless state was deliberately migrated.
-5. Configure firmware TLS trust **before** pointing Buddy to the cloud URL.
-   Put the verified root CA PEM for the deployed HTTPS certificate into the
-   ignored `firmware/include/HubSecrets.h` as `BUDDY_HUB_CA`, for example:
+In the Supabase dashboard, find the **Project URL** (an HTTPS origin) and
+create a **secret** API key starting `sb_secret_`. Supabase's publishable key
+will not work for server storage. Do not share the secret key, paste it in
+chat, put it in the browser/ESP32, or commit it to Git. The database password
+is not needed by Buddy's HTTP Data API.
 
-   ```cpp
-   #define BUDDY_HUB_CA R"BUDDYCA(
-   -----BEGIN CERTIFICATE-----
-   ...verified root certificate...
-   -----END CERTIFICATE-----
-   )BUDDYCA"
-   ```
+The cloud database starts empty. Existing accounts in your Mac's
+`care-hub/state` do **not** transfer automatically. Register new accounts on
+the cloud site, or arrange a carefully reviewed migration before using real
+data. Supabase Free does not provide automatic database backups; export test
+data if it matters to you.
 
-   Do not copy the placeholder, use `setInsecure()`, or guess a certificate.
-   Render's actual certificate chain must be checked after the host exists.
-   Rebuild and upload `buddy-s3-camera` once with this CA. Certificate renewal
-   may require a new firmware build if the trust anchor changes.
-6. Join Buddy's **Buddy-Setup** Wi-Fi network and enter home 2.4 GHz Wi-Fi and
-   the exact HTTPS app address shown under **My Buddy**. USB is needed for
-   flashing/serial setup, not for everyday syncing. Once Buddy reports its
-   pairing code, enter it under My Buddy on the *cloud* website. Changing
-   server URLs clears the previous device pairing, so pair again if moving
-   from localhost/LAN to Render.
-7. Verify **ESP32 online**, `Last contact`, and a device revision matching
-   the saved revision. Turn Buddy off: the site should show it offline after
-   the last-contact timeout. Change eye color while it is offline; when it
-   reconnects, wait for the applied revision to catch up and check the TFT.
-   A saved change alone is not proof it reached the physical device.
+## 2. Deploy the Render Free backend
 
-After initial setup, Buddy and each app user only need their own internet
-connections. The Mac can be off. If the hosted service is down, remote settings,
-cloud speech and calls stop; Buddy's local schedules can continue subject to
-its clock and power.
+Push the updated repository to GitHub. In Render choose **New → Blueprint**,
+connect the private Buddy repository, and select its root `render.yaml`. Check
+the review screen: the web service must say **Free**, with **no persistent
+disk**. Do not approve a paid plan accidentally.
 
-## Important limits before exposing real care data
+Set these values in Render's private environment-variable prompts:
 
-- This remains an assistive prototype, not a dependable medical or emergency
-  system. It needs a security/privacy review, account recovery, backups,
-  monitoring and an independent medication/emergency plan before real use.
-- Cloud deployment runs on Linux. The existing prescription **photo** reader
-  uses macOS Vision and will not work there; entering reviewed prescription
-  text remains possible. If all configured voice providers fail, macOS `say`
-  is not available as a cloud fallback.
-- Buddy video/audio currently relays through the service. Its actual latency,
-  bandwidth and hosting cost need testing on both home and mobile networks.
-- This setup does not make a USB-connected ESP automatically provision itself.
-  The first firmware flash and CA configuration are separate from Wi-Fi setup.
+- `SUPABASE_URL`: the Supabase Project URL, for example
+  `https://example.supabase.co` (no path or trailing `/api`).
+- `SUPABASE_SECRET_KEY`: the `sb_secret_` server key.
+- `ELEVENLABS_API_KEY`: a newly rotated key with speech-to-text and TTS
+  permission. Optional `ELEVENLABS_API_KEYS` supplies backups.
+- `OPENROUTER_API_KEYS` and optional `GEMINI_API_KEY`: newly rotated provider
+  keys if you want the AI and voice fallbacks.
 
-Render references: [web services](https://render.com/docs/web-services),
-[persistent disks](https://render.com/docs/disks),
-[Blueprint configuration](https://render.com/docs/blueprint-spec), and
-[pricing](https://render.com/pricing).
+The Blueprint already sets `BUDDY_STORAGE=supabase` and `BUDDY_HOST=0.0.0.0`.
+In cloud mode, storage is required: if the Supabase table, URL or secret key
+is missing, Buddy refuses to start rather than silently writing disposable
+local files. Watch the Render deploy logs for a successful start, then open
+its `https://…onrender.com` URL. It should show Buddy's sign-in page. Do not
+paste secret-bearing logs into a public issue or chat.
+
+The Render instance's in-memory call relay, presence and rate-limit state
+reset when it sleeps or restarts; calls in progress will drop. The single JSON
+database row is suitable for a small prototype, not high-concurrency use.
+AI/TTS provider usage, bandwidth and other plan limits may still cost money
+or interrupt service; review each provider's current terms.
+
+## 3. Deploy Vercel and configure Buddy
+
+Follow the [Vercel website guide](VERCEL_DEPLOYMENT.md). Set only
+`BUDDY_BACKEND_URL` there, to the Render HTTPS origin. **Never** add the
+Supabase secret or provider keys to Vercel's website code.
+
+Before pointing the ESP32 to Render, verify the Render HTTPS certificate's
+root CA and add its PEM to the ignored `firmware/include/HubSecrets.h` as
+`BUDDY_HUB_CA`. Never use a placeholder certificate or `setInsecure()`.
+Rebuild/upload `buddy-s3-camera`. In Buddy's **Buddy-Setup** Wi-Fi portal,
+enter home 2.4 GHz Wi-Fi and the exact HTTPS backend address shown under
+**My Buddy** on the hosted site. Enter Buddy's pairing code on the cloud site.
+Moving from a previous local server requires re-pairing; old local data is
+not automatically present on Supabase.
+
+Verify an eye-color change by waiting for the device's **applied revision**
+to match the saved revision and checking the TFT. Turn Buddy off and confirm
+the site reports it offline after its last-contact timeout. Then test speech
+and calls on real networks. A saved website setting alone is not proof that
+the hardware received it.
+
+## Limits
+
+This remains an assistive prototype, not a dependable medical or emergency
+system. The prescription **photo** reader uses macOS Vision and cannot run on
+Render's Linux host; reviewed text entry still works. Phone-to-phone WebRTC
+across arbitrary networks may require a TURN server; device calls relay via
+Render and must be load-tested on the free CPU/bandwidth limits. Free-tier
+sleep, pausing, key quotas and a lack of automatic backups are additional
+risks. Rotate any API keys previously shared in chat before hosting.
+
+Official references: [Render Free](https://render.com/docs/free),
+[Supabase API keys](https://supabase.com/docs/guides/getting-started/api-keys),
+[Supabase project pausing](https://supabase.com/docs/guides/platform/free-project-pausing),
+and [Vercel Git deployment](https://vercel.com/docs/git).

@@ -20,18 +20,19 @@ const keyId = key => createHash('sha256').update(key).digest('hex');
 
 // Persist only fingerprints and priority, never the secret keys themselves.
 export class ElevenLabsKeyRing {
-  constructor(keys, statePath) {
+  constructor(keys, statePath, stateStore = null) {
     this.configured = [...new Set(keys)].filter(Boolean);
     this.statePath = statePath;
+    this.stateStore = stateStore;
     this.demoted = [];
     this.saveQueue = Promise.resolve();
   }
 
   async load() {
     try {
-      const saved = JSON.parse(await readFile(this.statePath, 'utf8'));
+      const saved = this.stateStore ? await this.stateStore.load() : JSON.parse(await readFile(this.statePath, 'utf8'));
       const known = new Set(this.configured.map(keyId));
-      if (Array.isArray(saved.demoted))
+      if (Array.isArray(saved?.demoted))
         this.demoted = [...new Set(saved.demoted.filter(id => known.has(id)))];
     } catch (error) {
       if (error.code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error;
@@ -55,11 +56,12 @@ export class ElevenLabsKeyRing {
     const id = keyId(key);
     this.demoted = this.demoted.filter(value => value !== id);
     this.demoted.push(id);
-    const serialized = JSON.stringify({demoted:this.demoted}) + '\n';
+    const saved = {demoted:[...this.demoted]};
     this.saveQueue = this.saveQueue.catch(() => {}).then(async () => {
+      if (this.stateStore) { await this.stateStore.save(saved); return; }
       await mkdir(dirname(this.statePath), {recursive:true});
       const temporary = this.statePath + '.tmp';
-      await writeFile(temporary, serialized, {mode:0o600});
+      await writeFile(temporary, JSON.stringify(saved) + '\n', {mode:0o600});
       await rename(temporary, this.statePath);
     });
     await this.saveQueue;

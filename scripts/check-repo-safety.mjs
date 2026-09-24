@@ -18,7 +18,8 @@ try {
   const keyPattern = [
     ['sk', 'or', 'v1', ''].join('-'),
     ['nv', 'api'].join('') + '-',
-    'sk_' + '[a-z0-9]{16,}'
+    'sk_' + '[a-z0-9]{16,}',
+    ['sb', 'secret', ''].join('_') + '[a-z0-9]{16,}'
   ].join('|');
   keyFiles = execFileSync('git', ['grep', '--cached', '-l', '-i', '-E', keyPattern], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').filter(Boolean);
 } catch (error) {

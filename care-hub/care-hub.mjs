@@ -24,13 +24,22 @@ function calendar(c,month,dateToday){
 }
 
 export class CareHub {
-  constructor({directory,defaults,services}) {
-    Object.assign(this,{directory,defaults,services});
+  constructor({directory,defaults,services,stateStore=null}) {
+    Object.assign(this,{directory,defaults,services,stateStore});
     this.path=join(directory,'care-hub.json');this.media=new Map();this.signals=new Map();this.presence=new Map();this.limits=new Map();this.writes=Promise.resolve();
     this.db={version:1,users:[],sessions:[],circles:[],devices:[],invites:[],calls:[]};
   }
   async init(){
-    try{this.db=JSON.parse(await readFile(this.path,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+    if(this.stateStore){
+      const saved=await this.stateStore.load();
+      if(saved!==null){
+        if(!saved || !Array.isArray(saved.users) || !Array.isArray(saved.devices) || !Array.isArray(saved.circles))
+          throw new Error('Supabase contains invalid Buddy state. Refusing to overwrite it.');
+        this.db=saved;
+      }
+    }else{
+      try{this.db=JSON.parse(await readFile(this.path,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+    }
     // Legacy virtual devices must never be presented as live hardware.
     this.db.devices=this.db.devices.filter(d=>!d.simulated);
     for(const call of this.db.calls)if(active(call)){call.status='ended';call.endedAt=iso();call.reason='Server restarted';}
@@ -38,7 +47,10 @@ export class CareHub {
   }
   commit(){
     const snapshot=JSON.stringify(this.db);
-    this.writes=this.writes.catch(()=>{}).then(async()=>{await mkdir(this.directory,{recursive:true});await writeFile(this.path+'.tmp',snapshot,{mode:0o600});await rename(this.path+'.tmp',this.path);});return this.writes;
+    this.writes=this.writes.catch(()=>{}).then(async()=>{
+      if(this.stateStore)await this.stateStore.save(JSON.parse(snapshot));
+      else{await mkdir(this.directory,{recursive:true});await writeFile(this.path+'.tmp',snapshot,{mode:0o600});await rename(this.path+'.tmp',this.path);}
+    });return this.writes;
   }
   rate(req,kind,limit=30){
     const key=kind+':'+req.socket.remoteAddress,now=Date.now();let bucket=this.limits.get(key);
@@ -213,7 +225,7 @@ export class CareHub {
         this.db.devices.push(d);await this.commit();return send({deviceId:d.id,deviceToken:secret,pairCode,pairExpires:d.pairExpires},201);
       }
       if(p.startsWith('/api/v2/device/')){
-        const d=this.device(req);d.lastSeen=Date.now();
+        const d=this.device(req),previousSeen=d.lastSeen||0;d.lastSeen=Date.now();
         if(['/api/v2/device/tts','/api/v2/device/transcribe'].includes(p)){
           if(!d.circleId)fail(403,'Pair Buddy first.');this.rate(req,'speech:'+d.id,80);
           const next=new URL(url);next.pathname=p.replace('/api/v2/device','/api');await legacy(req,res,next);return true;
@@ -229,6 +241,7 @@ export class CareHub {
         if(p.endsWith('/sync')&&method==='POST'){
           if(!d.circleId)return send({paired:false,deviceId:d.id});
           const c=this.db.circles.find(c=>c.id===d.circleId);
+          const before=JSON.stringify({capabilities:d.capabilities,appliedRevision:d.appliedRevision,status:d.status,syncError:d.syncError,commands:d.commands});
           if(b.capabilities)d.capabilities={camera:b.capabilities.camera===true,audio:b.capabilities.audio===true};
           d.appliedRevision=Math.min(c.revision,Math.max(0,Number(b.appliedRevision)||0));
           d.status={mode:text(b.status?.mode,30),batteryPercent:Number.isFinite(b.status?.batteryPercent)?b.status.batteryPercent:null,headline:text(b.status?.headline),detail:text(b.status?.detail),activeReminderId:text(b.status?.activeReminderId,100)};
@@ -236,8 +249,13 @@ export class CareHub {
           const ack=Array.isArray(b.ack)?b.ack.slice(0,50):[];d.commands=d.commands.filter(cmd=>cmd.expiresAt>Date.now()&&!ack.includes(cmd.id));
           for(const event of (Array.isArray(b.events)?b.events:[]).slice(0,40))await this.deviceEvent(d,event);
           const peers=c.members.filter(m=>m.canCall&&m.userId!==c.ownerId).map(m=>({id:m.userId,name:this.peerName(m.userId)}));
-          for(const alert of c.alerts)if(alert.ref==='offline:'+d.id&&!alert.resolvedAt)alert.resolvedAt=iso();
-          await this.commit();return send({paired:true,revision:c.revision,settings:d.appliedRevision<c.revision?c.settings:null,commands:d.commands,peers,serverTime:Date.now()});
+          let resolvedOfflineAlert=false;
+          for(const alert of c.alerts)if(alert.ref==='offline:'+d.id&&!alert.resolvedAt){alert.resolvedAt=iso();resolvedOfflineAlert=true;}
+          // Keep online presence current in RAM, but avoid rewriting the whole
+          // Supabase document every three seconds when nothing else changed.
+          const changed=before!==JSON.stringify({capabilities:d.capabilities,appliedRevision:d.appliedRevision,status:d.status,syncError:d.syncError,commands:d.commands});
+          if(changed||resolvedOfflineAlert||Array.isArray(b.events)&&b.events.length||Date.now()-previousSeen>=15000)await this.commit();
+          return send({paired:true,revision:c.revision,settings:d.appliedRevision<c.revision?c.settings:null,commands:d.commands,peers,serverTime:Date.now()});
         }
         if(p.endsWith('/media')&&method==='POST'){
           const call=this.db.calls.find(c=>c.id===b.callId&&(c.to===d.id||c.from===d.id));if(!call)fail(403,'No call is assigned to this device.');return send(this.mediaExchange(call,d.id,b));

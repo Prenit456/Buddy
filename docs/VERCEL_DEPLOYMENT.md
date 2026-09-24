@@ -1,7 +1,7 @@
 # Put the existing Buddy website on Vercel
 
 This is the **same** Buddy website in `companion-app`, not a new design.
-Vercel serves its pages and forwards `/api/*` to the persistent Buddy backend.
+Vercel serves its pages and forwards `/api/*` to the Buddy backend.
 The ESP32 connects directly to that backend over HTTPS. A Vercel deployment
 **alone** cannot run this app's persistent accounts, pairing, device polling,
 and call relay.
@@ -42,13 +42,13 @@ token; never put a token in a command or share it in chat.
 
 ## 2. Host the backend first
 
-Deploy the *same private repository* to an always-on backend host. The provided
-`render.yaml` is the current prototype option; see
-[cloud setup](CLOUD_DEPLOYMENT.md). Use a paid service with a persistent disk,
-and set the provider keys there, **not in Vercel**. Wait for its public HTTPS
-address, such as `https://your-buddy-backend.onrender.com`. Test that opening
-that address displays the Buddy sign-in page. The backend must remain online
-even when your Mac is off.
+Deploy the *same private repository* to Render Free after completing the
+[Supabase cloud setup](CLOUD_DEPLOYMENT.md). Supabase persists accounts and
+device state; Render's local filesystem is disposable. Set provider keys on
+Render, **not in Vercel**. Wait for its public HTTPS address, such as
+`https://your-buddy-backend.onrender.com`. Test that opening that address
+displays the Buddy sign-in page. It can run when your Mac is off, but the free
+instance can sleep or restart and is not an always-available care service.
 
 If you use a non-Render backend, set its `BUDDY_PUBLIC_URL` to its HTTPS origin
 so the pairing screen displays the direct ESP32 address.

@@ -15,21 +15,19 @@ Requirements: Node.js 20+. Photo OCR additionally uses Apple's Vision framework 
 
 Keep that terminal running. Settings and care history are saved under `care-hub/state`. The server binds only to localhost unless `BUDDY_HOST` is explicitly changed.
 
-For access from another city **without leaving the Mac on**, the same app and
-hardware-sync service must run on an always-on internet host. The optional
-[Render cloud setup](docs/CLOUD_DEPLOYMENT.md) prepares that deployment; it has
-not been deployed or paired for you. Hosting is billable and the prototype
-needs further security/reliability work before storing real care data online.
-You can serve the existing website from GitHub through Vercel while the
-persistent backend stays on Render; follow the
-[Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md).
+For access from another city **without leaving the Mac on**, the backend must
+run on an internet host. The [free-tier prototype cloud setup](docs/CLOUD_DEPLOYMENT.md)
+uses Render Free for the Node server and Supabase for persistent state; the
+existing website runs on Vercel using the [Vercel guide](docs/VERCEL_DEPLOYMENT.md).
+None of these services or the ESP32 has been configured by pushing the code.
+Free services can sleep or pause and are not suitable for dependable care.
 
 The Care Hub no longer offers virtual devices or legacy demo mode. Pair the
 ESP32 in **My Buddy**, and wait for its device revision to match the saved
 revision. The site reports the physical device's last contact time; an open
 website by itself does not make Buddy appear online.
 
-New care circles start with empty calendars and contacts. Earlier single-device settings and journal files remain untouched in `care-hub/state`; they are not shared with newly registered accounts. Accounts and circles live in `care-hub.json` there (ignored by Git, mode 0600).
+New care circles start with empty calendars and contacts. Earlier single-device settings and journal files remain untouched in `care-hub/state`; they are not shared with newly registered accounts. Locally, accounts and circles live in `care-hub.json` there (ignored by Git, mode 0600). With `BUDDY_STORAGE=supabase`, the backend instead persists this state in a server-only Supabase table; local accounts are not migrated automatically.
 
 See [hardware pairing and calls](docs/FLASHING.md) for setup details.
 
