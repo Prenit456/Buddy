@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.local
+.env.*
+!.env.example
+.vercel/
+dist/
+.pio/
+firmware/.pio/
+firmware/data/*
+!firmware/data/.gitkeep
+care-hub/build/
+care-hub/state/*
+!care-hub/state/.gitkeep
+*.log
+firmware/include/HubSecrets.h

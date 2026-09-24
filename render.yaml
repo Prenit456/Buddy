@@ -1,0 +1,27 @@
+# Optional paid cloud deployment for the existing Buddy app and hardware-sync server.
+# This does not deploy automatically or include API keys. See docs/CLOUD_DEPLOYMENT.md.
+services:
+  - type: web
+    name: buddy-care
+    runtime: node
+    plan: 0.5c-512mb
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    disk:
+      name: buddy-state
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: BUDDY_HOST
+        value: 0.0.0.0
+      - key: BUDDY_STATE_DIR
+        value: /var/data
+      - key: OPENROUTER_API_KEYS
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEYS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
