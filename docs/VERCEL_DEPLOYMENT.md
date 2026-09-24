@@ -8,16 +8,21 @@ and call relay.
 
 ## 1. Make a private GitHub repository
 
-The project folder is not yet a Git repository. Create an **empty private**
-repository on GitHub, then in Terminal run these commands from the project
-folder. Replace `YOUR_USERNAME` and `YOUR_REPOSITORY` with the values GitHub
-shows you.
+If this folder is not already a Git repository, create an **empty private**
+repository on GitHub. Run the preparation commands first, then stop and read
+the safety-check result before running any commit or push command:
 
 ```sh
 cd /Users/preetib/Desktop/ideathon
 git init
 git add .
 npm run check:repo
+```
+
+Only if the check says **no known private paths or key patterns**, review the
+staged files and then continue. Replace the example GitHub URL with your own:
+
+```sh
 git status --short
 git commit -m "Prepare Buddy website for hosting"
 git branch -M main
@@ -30,6 +35,10 @@ cannot guarantee every secret is absent. Review `git status` yourself before
 pushing. Do **not** upload `.env.local`, `care-hub/state`,
 `firmware/include/HubSecrets.h`, `.pio`, or `dist` through GitHub's web uploader.
 Credentials pasted in chats should be rotated before hosting.
+If `git remote add origin` says the remote already exists, do not repeat it;
+check `git remote -v`. GitHub account passwords do not work for HTTPS Git
+pushes. Authenticate with GitHub Desktop, GitHub CLI, or a personal access
+token; never put a token in a command or share it in chat.
 
 ## 2. Host the backend first
 
