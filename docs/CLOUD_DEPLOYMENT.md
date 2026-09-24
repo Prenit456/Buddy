@@ -68,9 +68,9 @@ or interrupt service; review each provider's current terms.
 
 ## 3. Deploy Vercel and configure Buddy
 
-Follow the [Vercel website guide](VERCEL_DEPLOYMENT.md). Set only
-`BUDDY_BACKEND_URL` there, to the Render HTTPS origin. **Never** add the
-Supabase secret or provider keys to Vercel's website code.
+Follow the [Vercel website guide](VERCEL_DEPLOYMENT.md). The repository's
+`vercel.json` already routes website API calls to the Render HTTPS origin.
+**Never** add the Supabase secret or provider keys to Vercel's website code.
 
 Before pointing the ESP32 to Render, verify the Render HTTPS certificate's
 root CA and add its PEM to the ignored `firmware/include/HubSecrets.h` as

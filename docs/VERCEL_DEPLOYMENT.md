@@ -57,13 +57,11 @@ so the pairing screen displays the direct ESP32 address.
 
 1. In Vercel, choose **Add New → Project → Import Git Repository** and select
    the private Buddy repository. Keep **Root Directory** at the repository root.
-2. Set the environment variable `BUDDY_BACKEND_URL` to the backend's HTTPS
-   **origin only**—for example `https://your-buddy-backend.onrender.com`.
-   No trailing path, `/api`, username, or credentials. Set it for Production
-   and Preview if you use preview deployments.
-3. Deploy. `vercel.mjs` uses this variable to forward API traffic; the build
-   intentionally fails with an explanatory error when it is missing. Vercel
-   runs `npm run build:vercel` and serves `dist/vercel`.
+2. The repository's `vercel.json` already forwards `/api/*` to Buddy's Render
+   backend at `https://buddy-care-rat3.onrender.com`. Do not add provider keys,
+   Supabase secrets, or `PORT` to Vercel. The old `BUDDY_BACKEND_URL` variable
+   is no longer needed and may be removed.
+3. Deploy. Vercel runs `npm run build:vercel` and serves `dist/vercel`.
 4. Open the Vercel URL. Register/sign in and check **My Buddy**. It should show
    the **backend** HTTPS URL for ESP32 setup, not the Vercel site URL. On the
    backend, create/pair the physical device following the cloud setup guide.
@@ -73,7 +71,8 @@ so the pairing screen displays the direct ESP32 address.
 
 Do not point Buddy at `localhost` or at a Vercel page with no backend. The
 website and Buddy can be in different cities only while the backend is up and
-both devices have internet. If you change `BUDDY_BACKEND_URL`, redeploy Vercel;
+both devices have internet. If the Render backend URL changes, update the
+external rewrite destination in `vercel.json`, commit and push, and redeploy;
 moving to a different backend database requires account/data migration and
 device re-pairing.
 
@@ -81,6 +80,6 @@ The current prescription **photo** OCR uses macOS Vision and does not run on
 Render's Linux host; reviewed text entry still works. Buddy is an assistive
 prototype, not a replacement for medication or emergency care.
 
-Vercel references: [programmatic configuration](https://vercel.com/docs/project-configuration/vercel-ts),
+Vercel references: [static configuration](https://vercel.com/docs/project-configuration/vercel-json),
 [external rewrites](https://vercel.com/docs/routing/rewrites), and
 [deploying from Git](https://vercel.com/docs/deployments/git).

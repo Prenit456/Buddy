@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist/vercel",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://buddy-care-rat3.onrender.com/api/:path*"
+    },
+    {
+      "source": "/settings",
+      "destination": "/settings.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}
