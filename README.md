@@ -42,7 +42,7 @@ See [hardware pairing and calls](docs/FLASHING.md) for setup details.
 - Native 320×240 landscape **and** 240×320 portrait RGB565 output. The browser decodes frames produced by the same C++ renderer used by the TFT; it does not recreate the eyes in JavaScript.
 - Large eyes; only date, time and battery across the top. Four selectable base colors. Backlight control is supported by the design but fixed with the current direct-3V3 wiring; no battery sensor is connected.
 - No Talk or Done button on Buddy. The design supports a **top SOS button** held for 1.2 seconds, but this assembly has no assigned SOS-button GPIO. Voice/app SOS remains available with connectivity.
-- Configurable call name, for example “Hey Momo”. English voice commands for the day's agenda, clock/date, confirmation, ten-minute snooze, repeat, water check-ins, wellbeing and SOS.
+- Fixed “Hey” wake word (the separate Buddy name is only for introductions). English voice commands for the day's agenda, clock/date, confirmation, ten-minute snooze, repeat, water check-ins, wellbeing and SOS.
 - Calendar with one-off, daily and weekly schedules, inclusive start/end dates, up to 64 scheduled times, and a day-by-day agenda evaluated by C++.
 - Multiple simultaneous reminders queue instead of replacing one another. Unconfirmed reminders can repeat up to three times, a minute apart. Quiet hours silence non-medicine reminders; SOS and medication reminders remain audible.
 - Prescription photo → local OCR → editable review → confirmed calendar entries. Explicit written clock times are extracted; ambiguous frequency, dose and duration are never guessed.
@@ -52,27 +52,27 @@ See [hardware pairing and calls](docs/FLASHING.md) for setup details.
 
 ## Hands-free speech
 
-On the device preview, click **Enable hands-free listening once** and grant microphone access. After that, use the wake phrase, without holding a Talk button. A wake phrase by itself opens a 12-second follow-up window. The page must remain open and active; browsers can suspend background tabs.
+On the paired ESP32, say “Hey” followed by a request, without holding a button. “Hey” by itself opens a 12-second follow-up window. No browser tab or nearby Mac needs to remain open, but Buddy and the Care Hub must have internet access.
 
-Voice activity is detected locally, but **short speech clips are sent to ElevenLabs before C++ checks the wake phrase**. This is not private, offline keyword spotting. It needs internet, a working ELEVENLABS_API_KEY and provider credits. Stop listening with the microphone control. Buddy pauses recording during its own speech and stops after repeated recognition-service errors.
+Voice activity is detected locally, but **short speech clips are sent to ElevenLabs before C++ checks the wake word**. This is not private, offline keyword spotting. It needs internet, a working ElevenLabs transcription key and provider credits. Buddy pauses recognition during its own speech and backs off after transcription errors.
 
 For spoken replies, ElevenLabs is tried first using the primary key and then the configured backup keys. A quota- or rate-limited key moves to the end of the list for future requests; Google Gemini TTS runs only after all ElevenLabs keys fail. NVIDIA Speech NIM and the local macOS voice remain later fallbacks. The three additional ElevenLabs keys currently return `missing_permissions` for TTS; enable Text to Speech for them before relying on them as backups.
 
 Examples:
 
-- “Hey Buddy, what is on today?”
+- “Hey, what is on today?”
 - “Hey.” (Then say a question within 12 seconds. This short form still needs
   cloud transcription to recognize the wake word; it is not an offline hotword.)
-- “Hey Buddy, I have taken it.”
-- “Hey Buddy, remind me later.”
-- “Hey Buddy, I drank water.”
-- “Hey Buddy, I feel okay.”
-- “Hey Buddy, call for help.”
-- “Hey Buddy, call Priya.” (Priya must be an invited supervisor.)
-- “Hey Buddy, answer call.” / “Hey Buddy, decline call.”
-- “Hey Buddy, allow camera.” / “Hey Buddy, stop camera.”
+- “Hey, I have taken it.”
+- “Hey, remind me later.”
+- “Hey, I drank water.”
+- “Hey, I feel okay.”
+- “Hey, call for help.”
+- “Hey, call Priya.” (Priya must be an invited supervisor.)
+- “Hey, answer call.” / “Hey, decline call.”
+- “Hey, allow camera.” / “Hey, stop camera.”
 
-The device's typed input exercises the same C++ parser. The website's **Talk with Buddy** screen and general device conversation use NVIDIA's API Catalog through the Care Hub; reminders and built-in commands do not require a conversation model. Set `NVIDIA_CHAT_API_KEYS` on the server to one or more comma-separated keys. The server tries the next key if a request fails or returns no answer, and moves rejected or rate-limited keys to the end for later requests. The default model is `meta/muse-glimmer-30b`; it can be changed with `NVIDIA_CHAT_MODEL`. NVIDIA chat and the ElevenLabs/Google speech providers remain separate. Website chat history stays in the current browser tab and is not saved to the care journal.
+The ESP32's I2S microphone captures speech and sends voiced clips to the paired Care Hub for transcription. After “Hey”, built-in commands run on-device; other requests go to NVIDIA through the authenticated device endpoint. The answer appears on the TFT and is sent to ElevenLabs (Gemini fallback) for spoken playback through the I2S amplifier. This full path requires Wi-Fi, a paired device, and working speech/chat provider credentials on the Care Hub. The website's **Talk with Buddy** screen also uses NVIDIA through the Care Hub. Set `NVIDIA_CHAT_API_KEYS` on the server to one or more comma-separated keys. The server tries the next key if a request fails or returns no answer, and moves rejected or rate-limited keys to the end for later requests. The default model is `meta/muse-glimmer-30b`; it can be changed with `NVIDIA_CHAT_MODEL`. Website chat history stays in the current browser tab and is not saved to the care journal.
 
 September 23 live checks verified Gemini speech, ElevenLabs speech/transcription, and the former OpenRouter chat route. September 24 checks received a short answer both directly from NVIDIA-hosted Muse Glimmer and through Buddy's authenticated, isolated device endpoint. A real website/physical-device round trip with replacement NVIDIA keys is still needed after deployment. See [verification results](docs/VERIFICATION.md).
 

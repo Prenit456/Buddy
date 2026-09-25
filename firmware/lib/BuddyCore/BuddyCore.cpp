@@ -171,7 +171,7 @@ void BuddyCore::startSos(uint32_t nowMs) {
   snapshot_.mode = Mode::SosCountdown;
   snapshot_.speechAllowed = true;
   snapshot_.headline = "Calling for help";
-  snapshot_.detail = "Say hey " + callName_ + " cancel SOS if this was accidental";
+  snapshot_.detail = "Say Hey, cancel SOS if this was accidental";
   snapshot_.sosSecondsRemaining = sosCountdownSeconds_;
   sosDeadlineMs_ = nowMs + static_cast<uint32_t>(sosCountdownSeconds_) * 1000UL;
   transientModeUntilMs_ = 0;
@@ -338,12 +338,6 @@ bool contains(const std::string& input, const std::string& phrase) {
 }
 }
 
-void BuddyCore::setCallName(const std::string& name) {
-  const auto normalized = words(name);
-  callName_ = normalized.empty() ? "buddy" : normalized.substr(0, 24);
-  awakeUntilMs_ = 0;
-}
-
 void BuddyCore::setQuietHours(uint16_t startMinute, uint16_t endMinute) {
   quietStart_ = startMinute % 1440;
   quietEnd_ = endMinute % 1440;
@@ -367,14 +361,13 @@ std::string BuddyCore::hear(const std::string& text, uint32_t nowMs, const Local
   assistantQuery_.clear();
   auto input = words(text);
   if (input.empty()) return "ignored";
-  const std::string phrase = "hey " + callName_;
-  const auto wake = (" " + input + " ").find(" " + phrase + " ");
-  const bool shortWake = input == "hey";
-  if (wake != std::string::npos || shortWake) {
-    input = shortWake ? "" : input.substr(std::min(input.size(), wake + phrase.size()));
-    while (!input.empty() && input.front() == ' ') input.erase(input.begin());
+  // "Hey" is a whole, leading word: "they" and a stray "hey" in the
+  // middle of unrelated speech must not wake the assistant.
+  const bool wake = input == "hey" || input.compare(0, 4, "hey ") == 0;
+  if (wake) {
+    input = input == "hey" ? "" : input.substr(4);
     awakeUntilMs_ = nowMs + 12000;
-    emit(EventType::WakeDetected, callName_, "Wake phrase heard");
+    emit(EventType::WakeDetected, "hey", "Wake word heard");
   } else if (awakeUntilMs_ == 0 || deadlineReached(nowMs, awakeUntilMs_)) return "ignored";
   if (input.empty()) { startListening(nowMs); return "awake"; }
   awakeUntilMs_ = 0;

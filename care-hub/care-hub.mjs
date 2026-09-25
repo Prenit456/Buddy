@@ -317,7 +317,7 @@ export class CareHub {
           const pending=c.checkins.filter(check=>check.status==='waiting'||check.status==='overdue');for(const check of pending){check.status='answered';check.answer=answer;check.answeredAt=iso();}
           c.lastCheckin={at:iso(),mood:answer};c.journal.push({id:id('evt'),at:iso(),date:this.date(c),type:'check_in',reminderId:answer,message:u.name+' checked in: '+answer.replaceAll('_',' ')});
           if(answer!=='okay')this.alert(c,answer==='need_help'?'Help requested':'A check-in needs attention',u.name+' says '+answer.replaceAll('_',' '),answer==='need_help'?'sos':'wellbeing');
-        }else{this.circle(u,c.id,'canCall');const item={id:id('check'),askedBy:u.name,at:iso(),deadline:Date.now()+Math.max(1,Math.min(120,Number(b.minutes)||15))*60000,status:'waiting'};c.checkins.unshift(item);c.checkins=c.checkins.slice(0,50);for(const d of this.db.devices.filter(d=>d.circleId===c.id))this.command(d,'say',{message:u.name+' would like to check on you. Say hey '+c.settings.device.callName+' I feel okay, or call for help.'});}
+        }else{this.circle(u,c.id,'canCall');const item={id:id('check'),askedBy:u.name,at:iso(),deadline:Date.now()+Math.max(1,Math.min(120,Number(b.minutes)||15))*60000,status:'waiting'};c.checkins.unshift(item);c.checkins=c.checkins.slice(0,50);for(const d of this.db.devices.filter(d=>d.circleId===c.id))this.command(d,'say',{message:u.name+' would like to check on you. Say Hey, I feel okay, or call for help.'});}
         await this.commit();return send({ok:true});
       }
       if(path==='/tasks'&&method==='POST'){

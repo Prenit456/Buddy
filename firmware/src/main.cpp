@@ -84,7 +84,6 @@ void applySettings() {
   core.setReminders(settings.reminders());
   core.setSosCountdownSeconds(settings.sosCountdownSeconds());
   core.setMissedReminderMinutes(settings.missedReminderMinutes());
-  core.setCallName(settings.callName().c_str());
   core.setQuietHours(settings.quietStart(),settings.quietEnd());
   core.setReminderRepeats(settings.repeatCount());
   display.configure(settings.portrait(),settings.eyeColor());
@@ -262,7 +261,7 @@ void handleSetTime() {
 void handleHubCommand(JsonObjectConst command){
  const String type=command["type"]|"";JsonObjectConst p=command["payload"];
  if(type=="say")core.say(String(p["headline"]|"Your care circle").c_str(),String(p["message"]|"").c_str(),millis(),10000);
- else if(type=="call_ring") {const String message=String(p["name"]|"Your supervisor")+" is calling. Say hey "+settings.callName()+" answer call or decline call. A camera check-in shares video for two minutes without sound.";core.say("Incoming call",message.c_str(),millis(),15000);}
+ else if(type=="call_ring") {const String message=String(p["name"]|"Your supervisor")+" is calling. Say Hey, answer call or decline call. A camera check-in shares video for two minutes without sound.";core.say("Incoming call",message.c_str(),millis(),15000);}
  else if(type=="call_start") {const int64_t remaining=int64_t(p["expiresAt"]|int64_t(0))-int64_t(time(nullptr))*1000;if(remaining>0&&currentLocalTime().year>=2024)voice.startCall(p["callId"]|"",p["kind"]|"audio",uint32_t(std::min<int64_t>(remaining,1800000)));}
  else if(type=="call_end")voice.stopCall();
  else if(type=="action") {const String action=p["action"]|"";if(action=="sos")core.startSos(millis());else if(action=="cancel_sos")core.cancelSos(millis());else if(action=="acknowledge")core.acknowledge(millis());else if(action=="snooze")core.snooze(millis(),p["minutes"]|10);else if(action=="check_in")core.setCheckIn(p["mood"]|"okay",millis());}

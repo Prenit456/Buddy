@@ -36,7 +36,7 @@ Both IANA (companion) and POSIX (firmware) timezone values are updated together 
 
 Provider credentials are held only by the companion. Photos are processed locally and deleted from temporary storage. Reviewed prescription text and care events remain in local settings/history; protect the laptop and device.
 
-Wake-name customization uses cloud transcription followed by local matching. Speech clips may contain words spoken before the wake phrase. Fully offline custom wake-word support is a separate hardware/model integration, not something this prototype claims.
+The fixed “Hey” wake word uses cloud transcription followed by local matching. Speech clips may contain words spoken before the wake word. Fully offline wake-word support is a separate hardware/model integration, not something this prototype claims.
 
 
 The voice worker owns blocking recognition and playback so routine display/SOS input can continue; a priority SOS cancels queued speech. An in-flight HTTP operation still has a bounded timeout. Echo suppression and recognition quality need real acoustic testing.

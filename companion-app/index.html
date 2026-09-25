@@ -175,7 +175,7 @@
             <article class="card form-card">
               <h2>Device preferences</h2>
               <label><span>Device name</span><input data-path="device.deviceName" /></label>
-              <label><span>Call name</span><input data-path="device.callName" maxlength="24" placeholder="Buddy" /><small>Say “Hey” followed by this name. For example, “Hey Momo”. English wake phrases and commands are supported.</small></label>
+              <label><span>Buddy's name</span><input data-path="device.callName" maxlength="24" placeholder="Buddy" /><small>The wake word is always “Hey”. Say “Hey, what can you do?” or just “Hey”, then speak within 12 seconds. This name is for introductions, not waking the device.</small></label>
               <label><span>Time zone</span><select id="timezoneChoice"><option value="Asia/Kolkata">India</option><option value="UTC">UTC</option><option value="Europe/London">United Kingdom</option><option value="America/New_York">US Eastern</option></select></label>
               <label><span>Companion voice / photo server</span><input data-path="device.voiceServerUrl" placeholder="http://192.168.1.20:4173" /><small>Leave blank in the laptop simulation. For ESP32 network voice and photo reading, enter your trusted laptop's LAN address. Keep it on a private network.</small></label>
               <div class="toggle-row"><div><b>Hands-free listening</b><small>Enable the microphone in the device lab. Turn it off there at any time. The demo uses cloud transcription.</small></div></div>

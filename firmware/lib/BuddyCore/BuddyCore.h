@@ -101,11 +101,10 @@ class BuddyCore {
   void setCheckIn(const std::string& mood, uint32_t nowMs);
   void setCameraActive(bool active) { snapshot_.cameraActive=active; }
   void callControl(const std::string& action,const std::string& target="") { emit(EventType::CallControl,action,target); }
-  void setCallName(const std::string& name);
   void setQuietHours(uint16_t startMinute, uint16_t endMinute);
   void setReminderRepeats(uint8_t count) { repeatCount_ = count<1?1:count>3?3:count; }
   // Returns ignored, handled, awake, or assistant. Only text following the
-  // configured wake phrase (or the short follow-up window) reaches commands.
+  // fixed wake word "Hey" (or the short follow-up window) reaches commands.
   std::string hear(const std::string& text, uint32_t nowMs, const LocalTime& time);
   const std::string& assistantQuery() const { return assistantQuery_; }
   std::string agenda(const LocalTime& time) const;
@@ -153,7 +152,6 @@ class BuddyCore {
   std::vector<Reminder> pending_;
   struct Occurrence { std::string id; uint32_t date; };
   std::vector<Occurrence> triggered_;
-  std::string callName_ = "buddy";
   std::string assistantQuery_;
   uint32_t awakeUntilMs_ = 0;
   uint16_t quietStart_ = 1320, quietEnd_ = 420, localMinute_ = 720;

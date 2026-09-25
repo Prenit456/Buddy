@@ -108,7 +108,7 @@ process with Ctrl-C, then start the command above to load the updated code.
    physical device's pairing code.
 5. Once paired, saved settings/reminders sync to the ESP32. The speaker sounds
    a boot chime even before API configuration. After pairing, try
-   “Hey Buddy, what is the time?” (or the configured call name).
+   “Hey, what is the time?” The wake word is just “Hey”; the Buddy name does not change it.
 
 On the website, use **Talk with Buddy** for typed conversation. For a carer
 video call, invite a supervisor in **My people**, have them join the same care

@@ -7,8 +7,8 @@
 3. Connect the ESP32-S3 to the same Wi-Fi, set the Mac's LAN Care Hub URL in Buddy's setup portal, and enter Buddy's pairing code in **My Buddy**.
 4. In **My people**, create a one-use invitation. Register a supervisor in a separate tab/browser and join using that code. Sessions are tab-specific, so two roles can be demonstrated together.
 5. The supervisor edits Calendar or Voice & settings. Both apps see the same saved version. **My Buddy** shows whether the ESP32 has acknowledged the revision; offline changes stay queued.
-6. The supervisor calls Buddy from **My Buddy**. Accept on the physical Buddy with “Hey Buddy answer call.” Connect media explicitly on both sides.
-7. Call in the other direction: “Hey Buddy call Priya” (use the supervisor's registered name). The supervisor's app rings.
+6. The supervisor calls Buddy from **My Buddy**. Accept on the physical Buddy with “Hey, answer call.” Connect media explicitly on both sides.
+7. Call in the other direction: “Hey, call Priya” (use the supervisor's registered name). The supervisor's app rings.
 8. Try a camera check-in. Only supervisors given camera permission can request one. The older person must accept; it is microphone-free, visible, and stops after two minutes or earlier on hang-up/privacy revocation.
 9. Request a wellbeing check-in, send a family message, claim a shared errand, or acknowledge “I'm responding” on an alert. Messages to Buddy are queued for up to ten minutes. The check-in deadline becomes an alert if no reply arrives.
 
