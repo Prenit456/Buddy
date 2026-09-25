@@ -10,6 +10,7 @@ class DisplayUI {
  public:
   void begin();
   void configure(bool portrait, uint16_t color);
+  void showTranscript(const String& text);
   const buddy::BuddyDisplay& frame() const { return renderer_; }
   void render(const buddy::Snapshot& state, const buddy::LocalTime& localTime,
               int batteryPercent, uint8_t brightness);

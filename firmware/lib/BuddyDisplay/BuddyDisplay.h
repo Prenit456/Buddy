@@ -2,6 +2,7 @@
 #include <BuddyCore.h>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace buddy {
@@ -12,6 +13,7 @@ class BuddyDisplay {
   BuddyDisplay();
   ~BuddyDisplay();
   void configure(bool portrait, uint16_t eyeColor = 0x4E9F);
+  void showTranscript(const std::string& text, uint32_t nowMs);
   void render(const Snapshot& state, const LocalTime& time, int battery, uint32_t nowMs);
   int width() const;
   int height() const;

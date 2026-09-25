@@ -30,6 +30,9 @@ void DisplayUI::configure(bool portrait, uint16_t color) {
   tft_.setRotation(portrait ? 0 : 1);
   renderer_.configure(portrait, color);
 }
+void DisplayUI::showTranscript(const String& text) {
+  renderer_.showTranscript(text.c_str(), millis());
+}
 void DisplayUI::showBoot(const String&, const String&) {
   buddy::Snapshot state; buddy::LocalTime clock;
   clock.year=0;

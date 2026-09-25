@@ -1,5 +1,6 @@
 #include "BuddyDisplay.h"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <cstdio>
@@ -105,6 +106,9 @@ struct BuddyDisplay::Impl {
   uint16_t eyeColor = 0x4E9F;
   Mode lastMode = Mode::Idle;
   uint32_t lastSequence = 0;
+  std::string transcript;
+  uint32_t transcriptUntilMs = 0;
+  bool transcriptLayout = false;
   void setup() {
     screen.w=portrait?240:320; screen.h=portrait?320:240;
     eyes.begin(screen.w,screen.h-screen.top,20);
@@ -117,6 +121,7 @@ struct BuddyDisplay::Impl {
     eyes.eyeRx=eyes.eyeRxNext=eyes.eyeLx+ew+eyes.spaceBetweenCurrent;
     eyes.eyeLy=eyes.eyeRy=eyes.eyeLyNext=eyes.eyeRyNext=(screen.h-screen.top-eh)/2;
     eyes.open(); eyes.setAutoblinker(true,3,2); eyes.setCuriosity(true);
+    transcriptLayout=false;
     initialized=true;
   }
 };
@@ -126,9 +131,41 @@ void BuddyDisplay::configure(bool portrait,uint16_t eyeColor) {
   if(impl_->portrait!=portrait)impl_->initialized=false;
   impl_->portrait=portrait; impl_->eyeColor=eyeColor;
 }
+void BuddyDisplay::showTranscript(const std::string& text, uint32_t nowMs) {
+  auto& p=*impl_;
+  p.transcript.clear();
+  bool previousSpace = true;
+  for (unsigned char ch : text) {
+    if (p.transcript.size() >= 180) break;
+    if (std::isalnum(ch) && ch < 128) {
+      p.transcript += static_cast<char>(std::toupper(ch));
+      previousSpace = false;
+    } else if ((ch == ':' || ch == '-' || ch == '%') && !previousSpace) {
+      p.transcript += static_cast<char>(ch);
+    } else if (!previousSpace) {
+      p.transcript += ' ';
+      previousSpace = true;
+    }
+  }
+  while (!p.transcript.empty() && p.transcript.back() == ' ') p.transcript.pop_back();
+  p.transcriptUntilMs = p.transcript.empty() ? 0 : nowMs + 12000;
+}
 void BuddyDisplay::render(const Snapshot& state,const LocalTime& time,int battery,uint32_t nowMs) {
   auto& p=*impl_; buddy_robo::frameTime=nowMs;
   if(!p.initialized)p.setup();
+  const bool transcriptVisible = p.transcriptUntilMs != 0 &&
+      static_cast<int32_t>(nowMs-p.transcriptUntilMs) < 0;
+  if (transcriptVisible != p.transcriptLayout) {
+    p.eyes.setHeight(transcriptVisible ? (p.portrait ? 152 : 112) :
+                     (p.portrait ? 186 : 156),
+                     transcriptVisible ? (p.portrait ? 152 : 112) :
+                     (p.portrait ? 186 : 156));
+    p.transcriptLayout = transcriptVisible;
+  }
+  if (!transcriptVisible && p.transcriptUntilMs != 0) {
+    p.transcript.clear();
+    p.transcriptUntilMs = 0;
+  }
   p.screen.color=p.eyeColor;
   if(state.mode==Mode::Listening)p.screen.color=0x7FD4;
   if(state.mode==Mode::Reminder)p.screen.color=0xFD49;
@@ -140,9 +177,11 @@ void BuddyDisplay::render(const Snapshot& state,const LocalTime& time,int batter
   p.lastSequence=state.speechSequence;
   int boundX=p.eyes.getScreenConstraint_X(),boundY=p.eyes.getScreenConstraint_Y();
   p.eyes.eyeLxNext=std::max(0,std::min(boundX,int(boundX/2+state.gazeX*boundX*.45f)));
-  p.eyes.eyeLyNext=std::max(0,std::min(boundY,int(boundY/2+state.gazeY*boundY*.40f)));
+  p.eyes.eyeLyNext=transcriptVisible
+      ? std::max(0,std::min(boundY,(p.portrait ? 24 : 12)+int(state.gazeY*8.0f)))
+      : std::max(0,std::min(boundY,int(boundY/2+state.gazeY*boundY*.40f)));
   p.eyes.drawEyes();
-  // Clock, date and battery are deliberately the only on-screen text.
+  // The transcript uses a separate lower band so it never covers the eyes.
   char clock[8],date[12],bat[8];
   static const char* months[]={"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
   std::snprintf(clock,sizeof(clock),"%02u:%02u",time.hour,time.minute);
@@ -155,8 +194,33 @@ void BuddyDisplay::render(const Snapshot& state,const LocalTime& time,int batter
   p.screen.text(clock,p.screen.w/2-29,9,2,0xFFFF);
   p.screen.text(bat,p.screen.w-int(std::strlen(bat))*6*scale-8,12,scale,0x9FF3);
   p.screen.rect(10,31,p.screen.w-20,1,0x2967);
+  if (transcriptVisible) {
+    const int captionTop = p.portrait ? 239 : 176;
+    const size_t maxChars = p.portrait ? 18 : 24;
+    const int maxLines = p.portrait ? 3 : 2;
+    p.screen.rect(0,captionTop,p.screen.w,p.screen.h-captionTop,background);
+    p.screen.rect(10,captionTop,p.screen.w-20,1,0x4E9F);
+    p.screen.text("YOU SAID:",12,captionTop+6,1,0x9FF3);
+    size_t start=0;
+    for (int line=0;line<maxLines && start<p.transcript.size();++line) {
+      size_t end=std::min(start+maxChars,p.transcript.size());
+      if (end<p.transcript.size() && p.transcript[end]!=' ') {
+        const size_t space=p.transcript.rfind(' ',end);
+        if (space!=std::string::npos && space>start) end=space;
+      }
+      std::string row=p.transcript.substr(start,end-start);
+      start=end;
+      while(start<p.transcript.size() && p.transcript[start]==' ') ++start;
+      if (line==maxLines-1 && start<p.transcript.size()) {
+        if (row.size()>maxChars-3) row.resize(maxChars-3);
+        row += "---";
+      }
+      p.screen.text(row.c_str(),12,captionTop+21+line*19,2,0xFFFF);
+    }
+  }
   // Quiet, non-flashing listening indicator.
-  if(state.mode==Mode::Listening)p.screen.rect(p.screen.w/2-18,p.screen.h-15,36,3,0x7FD4);
+  if(state.mode==Mode::Listening && !transcriptVisible)
+    p.screen.rect(p.screen.w/2-18,p.screen.h-15,36,3,0x7FD4);
   // Steady red camera outline: visible in both the native and physical display.
   if(state.cameraActive){p.screen.rect(5,p.screen.h-18,12,9,0xF800);p.screen.rect(17,p.screen.h-16,4,5,0xF800);}
 }

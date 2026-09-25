@@ -40,7 +40,7 @@ See [hardware pairing and calls](docs/FLASHING.md) for setup details.
 - Shared care tasks, claimed alerts ("I'm responding"), check-in requests with overdue alerts, family messages and a settings/access audit trail.
 - Colored, procedural [FluxGarage RoboEyes](https://github.com/FluxGarage/RoboEyes), with blinks, gaze, expressive speaking/listening/reminder/SOS states and a quiet nighttime expression.
 - Native 320×240 landscape **and** 240×320 portrait RGB565 output. The browser decodes frames produced by the same C++ renderer used by the TFT; it does not recreate the eyes in JavaScript.
-- Large eyes; only date, time and battery across the top. Four selectable base colors. Backlight control is supported by the design but fixed with the current direct-3V3 wiring; no battery sensor is connected.
+- Large eyes; date, time and battery across the top, with recognized speech temporarily captioned below raised eyes. Four selectable base colors. Backlight control is supported by the design but fixed with the current direct-3V3 wiring; no battery sensor is connected.
 - No Talk or Done button on Buddy. The design supports a **top SOS button** held for 1.2 seconds, but this assembly has no assigned SOS-button GPIO. Voice/app SOS remains available with connectivity.
 - Fixed “Hey” wake word (the separate Buddy name is only for introductions). English voice commands for the day's agenda, clock/date, confirmation, ten-minute snooze, repeat, water check-ins, wellbeing and SOS.
 - Calendar with one-off, daily and weekly schedules, inclusive start/end dates, up to 64 scheduled times, and a day-by-day agenda evaluated by C++.
@@ -55,6 +55,8 @@ See [hardware pairing and calls](docs/FLASHING.md) for setup details.
 On the paired ESP32, say “Hey” followed by a request, without holding a button. “Hey” by itself opens a 12-second follow-up window. No browser tab or nearby Mac needs to remain open, but Buddy and the Care Hub must have internet access.
 
 Voice activity is detected locally, but **short speech clips are sent to ElevenLabs before C++ checks the wake word**. This is not private, offline keyword spotting. It needs internet, a working ElevenLabs transcription key and provider credits. Buddy pauses recognition during its own speech and backs off after transcription errors.
+
+Each successful transcription appears under the eyes for 12 seconds, even when it does not start with “Hey”. This is a post-transcription caption, not a live word-by-word display; if the speech service fails, there are no recognized words to show.
 
 For spoken replies, ElevenLabs is tried first using the primary key and then the configured backup keys. A quota- or rate-limited key moves to the end of the list for future requests; Google Gemini TTS runs only after all ElevenLabs keys fail. NVIDIA Speech NIM and the local macOS voice remain later fallbacks. The three additional ElevenLabs keys currently return `missing_permissions` for TTS; enable Text to Speech for them before relying on them as backups.
 

@@ -469,6 +469,7 @@ void loop() {
     if(kind==2){addEvent("voice_error",heard);audio.chimeReminder();}
     else if(kind==1)core.say("Buddy says",heard.c_str(),millis(),15000);
     else {
+      display.showTranscript(heard);
       const auto outcome=core.hear(heard.c_str(),millis(),localTime);
       if(outcome=="assistant")voice.ask(core.assistantQuery().c_str());
     }
