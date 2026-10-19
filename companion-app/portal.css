@@ -54,6 +54,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--teal); }
 .auth-side { background: var(--paper); }
 .auth-card { max-width: 450px; padding: clamp(24px, 3vw, 34px); background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
 .auth-card h2 { font-size: 1.8rem; }
+.auth-actions { display: flex; gap: 10px; }
+.auth-actions button { flex: 1; }
 .role-choices label { background: #fffefa; border-radius: 12px; }
 .role-choices label:has(:checked) { border-color: var(--teal); background: var(--teal-soft); }
 .sidebar { width: 246px; padding: 27px 18px 20px; background: var(--ink); border: 0; color: #f8f5ed; z-index: 20; }
@@ -120,3 +122,4 @@ footer { color: var(--muted); }
   .quick-settings { grid-template-columns: 1fr; }
   .small-face { display: none; }
 }
+#buddyTftPreview{display:block;width:min(100%,640px);height:auto;aspect-ratio:4/3;background:#0842;border:10px solid #182e30;border-radius:18px;image-rendering:pixelated;margin:1rem auto}

@@ -1,4 +1,56 @@
-# Put the existing Buddy website on Vercel
+# Current Buddy website release: Vercel + Cloudflare
+
+The current website lives in `companion-app`. Vercel serves its static pages;
+accounts, care circles, pairing, settings, messages and call media use the
+existing Cloudflare Worker:
+
+`https://buddy-remote-test.prenit-kathuria.workers.dev`
+
+The ESP32 contacts that Worker directly. The app and hardware can use different
+Wi-Fi networks. No local CareHub or Render service is needed for this build.
+
+## Current release procedure
+
+1. Run `npm run build:vercel` and `node --test scripts/vercel-release.test.mjs`.
+2. Review the website changes before committing. Do not use `git add .` in this
+   workspace: it also contains separate hardware experiments, local credentials
+   and submission material. Publish only reviewed website/release files.
+3. Keep the repository root as Vercel's Root Directory, with no framework preset.
+   The build command is `npm run build:vercel`; output is `dist/vercel`.
+4. Deploy the reviewed production-branch commit. Confirm its source commit and
+   successful build in Vercel, then check the public website and API endpoints.
+5. Verify `/settings`, `/device-preview.js`, `/api/health` and `/api/v2/me`.
+   Without credentials, `/api/v2/me` should return an authentication error, not
+   an old pairing-only response, HTML failure or unavailable backend.
+
+`vercel.json` forwards `/api/v2/*` to the matching Cloudflare care API and
+`/api/health` to `/health` on the Worker. API responses are not cached. The
+service worker version bump refreshes the frontend on existing installations.
+The static build includes the current username login, calendar, prescription
+review, care-circle/call controls, hardware controls and eye preview.
+
+The source repository is `https://github.com/Prenit456/Buddy`. The confirmed main
+public website is `https://buddyv2.vercel.app`. Another project,
+`buddy-sigma-ashy.vercel.app`, is connected to the same repository; pushing their
+shared production branch may build both. This release does not change repository
+visibility, database contents, credentials or hardware pairing.
+
+Provider keys, device credentials and D1 bindings belong in Cloudflare, never in
+the static app or GitHub. Keep `.env*`, `.pio`, private care data and cloud auth
+files out of commits. A successful website build alone does not prove hardware
+calls or delivery; verify with a paired device separately. Final video
+performance still needs combined camera, display, audio and network testing.
+
+Official references: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
+[deploying Git repositories](https://vercel.com/docs/git).
+
+---
+
+# Legacy Render/Supabase setup (historical reference only)
+
+The instructions below describe the older architecture. They do not apply to
+the current Cloudflare production release above. Do not point the current
+website back to Render or upload the whole working folder.
 
 This is the **same** Buddy website in `companion-app`, not a new design.
 Vercel serves its pages and forwards `/api/*` to the Buddy backend.

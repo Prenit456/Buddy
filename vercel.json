@@ -5,8 +5,12 @@
   "outputDirectory": "dist/vercel",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://buddy-care-rat3.onrender.com/api/:path*"
+      "source": "/api/v2/:path*",
+      "destination": "https://buddy-remote-test.prenit-kathuria.workers.dev/api/v2/:path*"
+    },
+    {
+      "source": "/api/health",
+      "destination": "https://buddy-remote-test.prenit-kathuria.workers.dev/health"
     },
     {
       "source": "/settings",
@@ -18,6 +22,12 @@
       "source": "/sw.js",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/api/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     }
   ]

@@ -8,7 +8,7 @@ export class BuddyCalls {
  update(calls,peer,circle){
   const next=calls.find(c=>['ringing','accepted'].includes(c.status)&&(c.from===peer||c.to===peer));
   if(!next){if(this.call){this.stop();this.call=null;}this.$('#callPanel').hidden=true;return;}
-  if(this.call?.id!==next.id)this.stop();this.call=next;this.peer=peer;this.circle=circle;this.isDevice=peer.startsWith('device_');
+  if(this.call?.id!==next.id){this.stop();this.autoConnectFor=null;}this.call=next;this.peer=peer;this.circle=circle;this.isDevice=peer.startsWith('device_');
   this.$('#callPanel').hidden=false;this.$('#callKind').textContent=(next.kind==='camera'?'CAMERA CHECK-IN':next.kind.toUpperCase()+' CALL')+(this.isDevice?' · ON BUDDY':'');
   this.$('#callTitle').textContent=next.from===peer?next.toName:next.fromName;
   this.$('#callState').textContent=next.status==='accepted'?'Connected · '+Math.max(0,Math.ceil((next.expiresAt-Date.now())/1000))+'s left':'Ringing';
@@ -16,6 +16,13 @@ export class BuddyCalls {
   this.$('#answerCall').hidden=next.status!=='ringing'||next.to!==peer;
   this.$('#connectMedia').hidden=next.status!=='accepted'||!!this.connected||this.busy;
   this.$('#endCall').textContent=next.status==='ringing'?(next.to===peer?'Decline':'Cancel call'):'End call';
+  // The caregiver already clicked Video call Buddy. Once the physical Buddy
+  // answers, start browser media automatically; Connect remains as a fallback
+  // if the browser requires a fresh gesture for camera/microphone permission.
+  if(next.transport==='buddy-media'&&next.status==='accepted'&&next.from===peer&&
+     !this.connected&&!this.busy&&this.autoConnectFor!==next.id){
+   this.autoConnectFor=next.id;queueMicrotask(()=>{if(this.call?.id===next.id)this.connect();});
+  }
  }
  async control(operation,body={}){if(this.isDevice)return this.request('/circles/'+this.circle+'/device-call/answer',{callId:this.call.id,...body,...(operation==='end'?{end:true}:{})});return this.request('/calls/'+this.call.id+'/'+operation,body);}
  async answer(){try{await this.control('accept');await this.refresh();await this.connect();}catch(e){this.toast(e.message);}}
@@ -64,7 +71,13 @@ export class BuddyCalls {
    if(Date.now()>call.expiresAt){this.stop();return;}
    try{
     const body={callId:call.id,after:this.after,frameAfter:this.frameAfter};
-    if(this.chunks.length){const chunks=this.chunks.splice(0,3);let binary='';for(const chunk of chunks)binary+=String.fromCharCode(...chunk);body.audio=btoa(binary);}
+    if(this.chunks.length){
+     // Keep the same 16 KiB PCM bound as the ESP and Worker, including phones
+     // whose AudioContext runs at 16 kHz rather than the usual 44.1/48 kHz.
+     let binary='',bytes=0;
+     while(this.chunks.length&&bytes<16384){const chunk=this.chunks[0],take=Math.min(chunk.length,16384-bytes);binary+=String.fromCharCode(...chunk.subarray(0,take));bytes+=take;if(take===chunk.length)this.chunks.shift();else this.chunks[0]=chunk.subarray(take);}
+     body.audio=btoa(binary);
+    }
     if(video&&Date.now()-this.lastFrame>600&&this.$('#localVideo').readyState>=2){this.captureCanvas.getContext('2d').drawImage(this.$('#localVideo'),0,0,320,240);body.jpeg=this.captureCanvas.toDataURL('image/jpeg',.55).split(',')[1];this.lastFrame=Date.now();}
     const result=await this.request(this.isDevice?'/circles/'+this.circle+'/device-call/media':'/calls/'+call.id+'/media',body);
     if(generation!==this.generation)return;
